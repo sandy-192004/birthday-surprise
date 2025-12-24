@@ -1,22 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import tharImg from "./public/thar.png";
-import "./leaves.css";
+import "./level1.css";
 
 export default function ImagePuzzle() {
   const rows = 3;
   const cols = 3;
-  const [pieceSize, setPieceSize] = useState(90);
+
+  const [pieceSize, setPieceSize] = useState(100);
   const [pieces, setPieces] = useState([]);
   const [completed, setCompleted] = useState(false);
+
   const dragIndexRef = useRef(null);
+  const touchIndexRef = useRef(null);
 
-  // 🔥 REDUCED FIREFLIES
-  const fireflyCount = 20;
-
-  /* ---------- Responsive Puzzle Size ---------- */
+ 
   useEffect(() => {
     const updateSize = () => {
-      const size = Math.min(window.innerWidth, window.innerHeight, 360);
+      const size = Math.min(window.innerWidth, 330);
       setPieceSize(Math.floor(size / cols));
     };
     updateSize();
@@ -24,31 +24,31 @@ export default function ImagePuzzle() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  /* ---------- Initialize Puzzle ---------- */
+ 
   useEffect(() => {
     const temp = [];
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        temp.push({ id: y * cols + x, correct: y * cols + x, x, y });
+        temp.push({
+          id: y * cols + x,
+          correctIndex: y * cols + x,
+          x,
+          y,
+        });
       }
     }
     setPieces(temp.sort(() => Math.random() - 0.5));
   }, []);
 
-  /* ---------- Swap Logic ---------- */
-  const swapPieces = (dropIndex) => {
-    if (dragIndexRef.current === null || completed) return;
 
-    const newPieces = [...pieces];
-    [newPieces[dragIndexRef.current], newPieces[dropIndex]] = [
-      newPieces[dropIndex],
-      newPieces[dragIndexRef.current],
-    ];
+  const swapPieces = (from, to) => {
+    if (from === null || to === null || completed) return;
 
-    setPieces(newPieces);
-    dragIndexRef.current = null;
+    const updated = [...pieces];
+    [updated[from], updated[to]] = [updated[to], updated[from]];
+    setPieces(updated);
 
-    if (newPieces.every((p, i) => p.correct === i)) {
+    if (updated.every((p, i) => p.correctIndex === i)) {
       setCompleted(true);
     }
   };
@@ -58,42 +58,36 @@ export default function ImagePuzzle() {
 
   return (
     <div className="page">
-      {/* ---------- Fireflies ---------- */}
-      {Array.from({ length: fireflyCount }).map((_, i) => (
-        <div
-          key={i}
-          className="firefly"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDuration: `${12 + Math.random() * 12}s`,
-          }}
-        />
-      ))}
-
-      {/* ---------- Header ---------- */}
+     
       <div className="header">
         <h2>Level 1</h2>
-        <h3>Reassemble the image to continue</h3>
+        <h3>Reassemble the image</h3>
       </div>
 
-      {/* ---------- Puzzle ---------- */}
       <div className="centerArea">
         <div
           className="grid"
           style={{
-            gridTemplateColumns: `repeat(${cols}, ${pieceSize}px)`,
-            gridTemplateRows: `repeat(${rows}, ${pieceSize}px)`,
+            gridTemplateColumns: `repeat(3, ${pieceSize}px)`,
+            gridTemplateRows: `repeat(3, ${pieceSize}px)`,
           }}
         >
           {pieces.map((p, index) => (
             <div
               key={p.id}
+              className="piece"
               draggable={!completed}
               onDragStart={() => (dragIndexRef.current = index)}
               onDragOver={(e) => e.preventDefault()}
-              onDrop={() => swapPieces(index)}
-              className="piece"
+              onDrop={() => {
+                swapPieces(dragIndexRef.current, index);
+                dragIndexRef.current = null;
+              }}
+              onTouchStart={() => (touchIndexRef.current = index)}
+              onTouchEnd={() => {
+                swapPieces(touchIndexRef.current, index);
+                touchIndexRef.current = null;
+              }}
               style={{
                 width: pieceSize,
                 height: pieceSize,
@@ -106,11 +100,13 @@ export default function ImagePuzzle() {
         </div>
       </div>
 
-      {/* ---------- Success Popup ---------- */}
+     
       {completed && (
         <div className="overlay">
           <div className="popup">
-            🎉 Congratulations! <br /> Level Unlocked 🎉
+            🎉 Congratulations! <br />
+            Your key is <b style={{ color: "green" }}>GREEN</b>
+            <br /><br />
             <button onClick={() => (window.location.href = "/level2")}>
               OK
             </button>
